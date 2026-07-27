@@ -34,7 +34,17 @@ These were chosen empirically: swept gain values 3-8 and thresholds against both
 
 ## Known Limitation (disclosed, not silently accepted)
 
-This does not fully resolve the original bug for arbitrarily faint synthetic edges: an idealized delta-15 luminance step (the original diagnostic test case) no longer clears the new threshold at gain=3 (it did at the old, broken gain=8 config). Investigation showed this is not a tunable oversight — this real image's own inherent background rendering noise occupies an overlapping raw-contrast range with that idealized subtle-edge test case, so no (gain, threshold) combination usable with this pure local-stddev-based technique can guarantee recovering every theoretically-possible faint edge without risking noise on this class of image. The chosen parameters prioritize a clean, real, visually-verified improvement over a theoretical worst case.
+**This is a materially larger limitation than it might first appear — both of the original bug's real-world diagnostic cases remain undetected, not just an idealized extreme.** Measured against the actual committed code:
+
+| Reference case | Raw gradient magnitude at gain=3 | Clears threshold 210? |
+|---|---|---|
+| Dark background pattern (delta=15) | 96 | No |
+| Dark clothing fold (delta=20) | 124 | No |
+| High-contrast edge (delta=210) | 296 | Yes |
+
+The practical breakeven point is around delta≈32-33 — noticeably higher than either of the two low-contrast scenarios that motivated the original fix. In other words: **this correction eliminates the noise regression, but in doing so it returns both of the originally-reported dark-detail cases to essentially their pre-fix (undetected) state.** Only the high-contrast case — which was never actually broken — remains reliably fixed, plus any real edge with contrast above the ~32-33 breakeven.
+
+Investigation showed this is not a tunable oversight: this real image's own inherent background rendering noise occupies an overlapping raw-contrast range with both of these diagnostic cases, so no (gain, threshold) combination usable with this pure local-stddev-based technique can separate "faint real edge" from "faint rendering texture" for this class of image. The chosen parameters were a deliberate trade-off, confirmed by direct visual comparison, favoring a clean and visually-correct result over recovering these specific faint cases — but that trade-off should be understood as "the original bug is largely still present, just without the noise side-effect," not as "the original bug is fixed except for an extreme edge case."
 
 Future ideas if more sensitivity is needed later: a directional/coherence-based signal (real edges have consistent gradient direction across a neighborhood; noise does not) to distinguish faint structured edges from texture noise, rather than local variance alone.
 
@@ -42,4 +52,5 @@ Future ideas if more sensitivity is needed later: a directional/coherence-based 
 
 Verified via:
 1. Direct visual inspection of the real pipeline's output against a user-supplied real illustration (decoded via a temporary Node PNG reader, run through the actual committed pipeline functions via `vm`), comparing the pre-fix baseline, the broken uncapped-gain fix, and several gain/threshold candidates.
-2. Re-running the original synthetic reference cases (dark background pattern delta=15, dark clothing fold delta=20, high-contrast delta=210, noisy-flat-region false-positive check) against the new gain-capped formula to confirm the high-contrast case and noise-suppression still hold, and to honestly document the delta-15 case's known remaining limitation above.
+2. Re-running the original synthetic reference cases (dark background pattern delta=15, dark clothing fold delta=20, high-contrast delta=210, noisy-flat-region false-positive check) against the new gain-capped formula — see the table above. Both low-contrast cases fail to clear the new threshold; only the high-contrast case and stronger real edges reliably pass.
+3. Independent re-verification (separate review pass) reproduced these exact numbers from the real committed code and confirmed the rendered real-image output is visually clean, with no widespread speckle noise (7.35% black-pixel density vs. 24.95% for the broken config on the same image).
