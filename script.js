@@ -169,7 +169,7 @@ function boxBlur3x3(gray, width, height) {
   return out;
 }
 
-function localContrastNormalize(gray, width, height, windowRadius = 7, targetMean = 128, targetStd = 64, noiseFloor = 8) {
+function localContrastNormalize(gray, width, height, windowRadius = 7, targetMean = 128, targetStd = 64, maxGain = 3) {
   const w = width, h = height;
   const sumTable = new Float64Array((w + 1) * (h + 1));
   const sumSqTable = new Float64Array((w + 1) * (h + 1));
@@ -190,6 +190,7 @@ function localContrastNormalize(gray, width, height, windowRadius = 7, targetMea
     return table[a] - table[b] - table[c] + table[d];
   }
 
+  const minStdForGain = targetStd / maxGain;
   const out = new Uint8ClampedArray(w * h);
   for (let y = 0; y < h; y++) {
     const y0 = Math.max(0, y - windowRadius);
@@ -203,7 +204,7 @@ function localContrastNormalize(gray, width, height, windowRadius = 7, targetMea
       const mean = sum / count;
       const variance = Math.max(0, sumSq / count - mean * mean);
       const stdDev = Math.sqrt(variance);
-      const effectiveStd = Math.max(stdDev, noiseFloor);
+      const effectiveStd = Math.max(stdDev, minStdForGain);
       out[y * w + x] = (gray[y * w + x] - mean) / effectiveStd * targetStd + targetMean;
     }
   }
@@ -254,7 +255,7 @@ function toImageData(channel, width, height) {
   return imageData;
 }
 
-function processImageData(imageData, threshold = 150) {
+function processImageData(imageData, threshold = 210) {
   const { width, height } = imageData;
   const gray = toGrayscale(imageData);
   const blurred = boxBlur3x3(gray, width, height);
