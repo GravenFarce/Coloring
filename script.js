@@ -93,7 +93,9 @@ async function handleFile(file) {
     previewArea.hidden = false;
     downloadButton.hidden = false;
   } catch (err) {
-    showError('Something went wrong processing that image. Please try a different file.');
+    if (token === processingToken) {
+      showError('Something went wrong processing that image. Please try a different file.');
+    }
     console.error(err);
   } finally {
     if (token === processingToken) {
