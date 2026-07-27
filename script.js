@@ -91,3 +91,87 @@ dropZone.addEventListener('drop', (e) => {
   const file = e.dataTransfer.files[0];
   if (file) handleFile(file);
 });
+
+function toGrayscale(imageData) {
+  const { data, width, height } = imageData;
+  const gray = new Uint8ClampedArray(width * height);
+  for (let i = 0, p = 0; i < data.length; i += 4, p++) {
+    gray[p] = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
+  }
+  return gray;
+}
+
+function boxBlur3x3(gray, width, height) {
+  const out = new Uint8ClampedArray(width * height);
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      let sum = 0;
+      let count = 0;
+      for (let dy = -1; dy <= 1; dy++) {
+        for (let dx = -1; dx <= 1; dx++) {
+          const nx = x + dx;
+          const ny = y + dy;
+          if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
+            sum += gray[ny * width + nx];
+            count++;
+          }
+        }
+      }
+      out[y * width + x] = sum / count;
+    }
+  }
+  return out;
+}
+
+const SOBEL_X = [-1, 0, 1, -2, 0, 2, -1, 0, 1];
+const SOBEL_Y = [-1, -2, -1, 0, 0, 0, 1, 2, 1];
+
+function sobelMagnitude(gray, width, height) {
+  const out = new Float32Array(width * height);
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      let gx = 0;
+      let gy = 0;
+      let k = 0;
+      for (let dy = -1; dy <= 1; dy++) {
+        for (let dx = -1; dx <= 1; dx++) {
+          const nx = Math.min(width - 1, Math.max(0, x + dx));
+          const ny = Math.min(height - 1, Math.max(0, y + dy));
+          const val = gray[ny * width + nx];
+          gx += val * SOBEL_X[k];
+          gy += val * SOBEL_Y[k];
+          k++;
+        }
+      }
+      out[y * width + x] = Math.sqrt(gx * gx + gy * gy);
+    }
+  }
+  return out;
+}
+
+function thresholdAndInvert(magnitude, threshold) {
+  const out = new Uint8ClampedArray(magnitude.length);
+  for (let i = 0; i < magnitude.length; i++) {
+    out[i] = magnitude[i] > threshold ? 0 : 255;
+  }
+  return out;
+}
+
+function toImageData(channel, width, height) {
+  const imageData = new ImageData(width, height);
+  const data = imageData.data;
+  for (let i = 0, p = 0; p < channel.length; i += 4, p++) {
+    data[i] = data[i + 1] = data[i + 2] = channel[p];
+    data[i + 3] = 255;
+  }
+  return imageData;
+}
+
+function processImageData(imageData, threshold = 60) {
+  const { width, height } = imageData;
+  const gray = toGrayscale(imageData);
+  const blurred = boxBlur3x3(gray, width, height);
+  const magnitude = sobelMagnitude(blurred, width, height);
+  const bw = thresholdAndInvert(magnitude, threshold);
+  return toImageData(bw, width, height);
+}
