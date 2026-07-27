@@ -10,6 +10,7 @@ const outputCanvas = document.getElementById('output-canvas');
 const downloadButton = document.getElementById('download-button');
 
 let currentFileName = 'coloring-sheet';
+let processingToken = 0;
 
 function validateImageFile(file) {
   return !!file && ['image/png', 'image/jpeg', 'image/webp'].includes(file.type);
@@ -64,6 +65,8 @@ async function handleFile(file) {
     return;
   }
 
+  const token = ++processingToken;
+
   currentFileName = file.name.replace(/\.[^/.]+$/, '');
 
   previewArea.hidden = true;
@@ -74,8 +77,11 @@ async function handleFile(file) {
   // synchronous pixel loop below runs.
   await new Promise((resolve) => setTimeout(resolve, 0));
 
+  if (token !== processingToken) return;
+
   try {
     const img = await loadImageFromFile(file);
+    if (token !== processingToken) return;
     const ctx = drawImageToCanvas(img, originalCanvas, MAX_DIMENSION);
     const imageData = ctx.getImageData(0, 0, originalCanvas.width, originalCanvas.height);
 
@@ -90,13 +96,18 @@ async function handleFile(file) {
     showError('Something went wrong processing that image. Please try a different file.');
     console.error(err);
   } finally {
-    statusMessage.hidden = true;
+    if (token === processingToken) {
+      statusMessage.hidden = true;
+    }
   }
 }
 
 fileInput.addEventListener('change', () => {
   if (fileInput.files[0]) handleFile(fileInput.files[0]);
 });
+
+document.addEventListener('dragover', (e) => e.preventDefault());
+document.addEventListener('drop', (e) => e.preventDefault());
 
 dropZone.addEventListener('dragover', (e) => {
   e.preventDefault();
