@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Photo to Coloring Sheet</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main>
+    <h1>Photo &rarr; Coloring Sheet</h1>
+    <p class="subtitle">Upload a photo and get a printable coloring-book outline.</p>
+
+    <div id="drop-zone" class="drop-zone">
+      <p>Drag &amp; drop a photo here, or click to choose a file</p>
+      <input type="file" id="file-input" accept="image/png, image/jpeg, image/webp">
+    </div>
+
+    <p id="error-message" class="error-message" hidden></p>
+    <p id="status-message" class="status-message" hidden>Processing&hellip;</p>
+
+    <div id="preview-area" class="preview-area" hidden>
+      <div class="preview-panel">
+        <h2>Original</h2>
+        <canvas id="original-canvas"></canvas>
+      </div>
+      <div class="preview-panel">
+        <h2>Coloring Sheet</h2>
+        <canvas id="output-canvas"></canvas>
+      </div>
+    </div>
+
+    <button id="download-button" hidden>Download Coloring Sheet</button>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>
