@@ -9,6 +9,8 @@ const originalCanvas = document.getElementById('original-canvas');
 const outputCanvas = document.getElementById('output-canvas');
 const downloadButton = document.getElementById('download-button');
 
+let currentFileName = 'coloring-sheet';
+
 function validateImageFile(file) {
   return !!file && ['image/png', 'image/jpeg', 'image/webp'].includes(file.type);
 }
@@ -61,6 +63,8 @@ async function handleFile(file) {
     showError('Please upload an image file (PNG, JPEG, or WebP).');
     return;
   }
+
+  currentFileName = file.name.replace(/\.[^/.]+$/, '');
 
   previewArea.hidden = true;
   downloadButton.hidden = true;
@@ -193,3 +197,10 @@ function processImageData(imageData, threshold = 60) {
   const bw = thresholdAndInvert(magnitude, threshold);
   return toImageData(bw, width, height);
 }
+
+downloadButton.addEventListener('click', () => {
+  const link = document.createElement('a');
+  link.download = `${currentFileName}-coloring-sheet.png`;
+  link.href = outputCanvas.toDataURL('image/png');
+  link.click();
+});
