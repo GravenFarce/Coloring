@@ -62,13 +62,31 @@ async function handleFile(file) {
     return;
   }
 
+  previewArea.hidden = true;
+  downloadButton.hidden = true;
+  statusMessage.hidden = false;
+
+  // Yield to the browser so "Processing…" paints before the heavy
+  // synchronous pixel loop below runs.
+  await new Promise((resolve) => setTimeout(resolve, 0));
+
   try {
     const img = await loadImageFromFile(file);
-    drawImageToCanvas(img, originalCanvas, MAX_DIMENSION);
+    const ctx = drawImageToCanvas(img, originalCanvas, MAX_DIMENSION);
+    const imageData = ctx.getImageData(0, 0, originalCanvas.width, originalCanvas.height);
+
+    const outputData = processImageData(imageData);
+    outputCanvas.width = originalCanvas.width;
+    outputCanvas.height = originalCanvas.height;
+    outputCanvas.getContext('2d').putImageData(outputData, 0, 0);
+
     previewArea.hidden = false;
+    downloadButton.hidden = false;
   } catch (err) {
-    showError('Something went wrong loading that image. Please try a different file.');
+    showError('Something went wrong processing that image. Please try a different file.');
     console.error(err);
+  } finally {
+    statusMessage.hidden = true;
   }
 }
 
