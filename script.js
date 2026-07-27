@@ -8,6 +8,7 @@ const previewArea = document.getElementById('preview-area');
 const originalCanvas = document.getElementById('original-canvas');
 const outputCanvas = document.getElementById('output-canvas');
 const downloadButton = document.getElementById('download-button');
+const printButton = document.getElementById('print-button');
 
 let currentFileName = 'coloring-sheet';
 let processingToken = 0;
@@ -71,6 +72,7 @@ async function handleFile(file) {
 
   previewArea.hidden = true;
   downloadButton.hidden = true;
+  printButton.hidden = true;
   statusMessage.hidden = false;
 
   // Yield to the browser so "Processing…" paints before the heavy
@@ -92,6 +94,7 @@ async function handleFile(file) {
 
     previewArea.hidden = false;
     downloadButton.hidden = false;
+    printButton.hidden = false;
   } catch (err) {
     if (token === processingToken) {
       showError('Something went wrong processing that image. Please try a different file.');
@@ -270,4 +273,8 @@ downloadButton.addEventListener('click', () => {
   link.download = `${currentFileName}-coloring-sheet.png`;
   link.href = outputCanvas.toDataURL('image/png');
   link.click();
+});
+
+printButton.addEventListener('click', () => {
+  window.print();
 });
