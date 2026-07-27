@@ -114,6 +114,17 @@ dropZone.addEventListener('drop', (e) => {
   if (file) handleFile(file);
 });
 
+document.addEventListener('paste', (e) => {
+  const items = e.clipboardData ? e.clipboardData.items : [];
+  for (const item of items) {
+    if (item.type.startsWith('image/')) {
+      const file = item.getAsFile();
+      if (file) handleFile(file);
+      break;
+    }
+  }
+});
+
 function toGrayscale(imageData) {
   const { data, width, height } = imageData;
   const gray = new Uint8ClampedArray(width * height);
