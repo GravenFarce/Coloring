@@ -169,6 +169,47 @@ function boxBlur3x3(gray, width, height) {
   return out;
 }
 
+function localContrastNormalize(gray, width, height, windowRadius = 7, targetMean = 128, targetStd = 64, noiseFloor = 8) {
+  const w = width, h = height;
+  const sumTable = new Float64Array((w + 1) * (h + 1));
+  const sumSqTable = new Float64Array((w + 1) * (h + 1));
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const v = gray[y * w + x];
+      const idx = (y + 1) * (w + 1) + (x + 1);
+      sumTable[idx] = v + sumTable[idx - 1] + sumTable[idx - (w + 1)] - sumTable[idx - (w + 1) - 1];
+      sumSqTable[idx] = v * v + sumSqTable[idx - 1] + sumSqTable[idx - (w + 1)] - sumSqTable[idx - (w + 1) - 1];
+    }
+  }
+
+  function windowSum(table, x0, y0, x1, y1) {
+    const a = (y1 + 1) * (w + 1) + (x1 + 1);
+    const b = y0 * (w + 1) + (x1 + 1);
+    const c = (y1 + 1) * (w + 1) + x0;
+    const d = y0 * (w + 1) + x0;
+    return table[a] - table[b] - table[c] + table[d];
+  }
+
+  const out = new Uint8ClampedArray(w * h);
+  for (let y = 0; y < h; y++) {
+    const y0 = Math.max(0, y - windowRadius);
+    const y1 = Math.min(h - 1, y + windowRadius);
+    for (let x = 0; x < w; x++) {
+      const x0 = Math.max(0, x - windowRadius);
+      const x1 = Math.min(w - 1, x + windowRadius);
+      const count = (x1 - x0 + 1) * (y1 - y0 + 1);
+      const sum = windowSum(sumTable, x0, y0, x1, y1);
+      const sumSq = windowSum(sumSqTable, x0, y0, x1, y1);
+      const mean = sum / count;
+      const variance = Math.max(0, sumSq / count - mean * mean);
+      const stdDev = Math.sqrt(variance);
+      const effectiveStd = Math.max(stdDev, noiseFloor);
+      out[y * w + x] = (gray[y * w + x] - mean) / effectiveStd * targetStd + targetMean;
+    }
+  }
+  return out;
+}
+
 const SOBEL_X = [-1, 0, 1, -2, 0, 2, -1, 0, 1];
 const SOBEL_Y = [-1, -2, -1, 0, 0, 0, 1, 2, 1];
 
@@ -213,11 +254,12 @@ function toImageData(channel, width, height) {
   return imageData;
 }
 
-function processImageData(imageData, threshold = 60) {
+function processImageData(imageData, threshold = 150) {
   const { width, height } = imageData;
   const gray = toGrayscale(imageData);
   const blurred = boxBlur3x3(gray, width, height);
-  const magnitude = sobelMagnitude(blurred, width, height);
+  const normalized = localContrastNormalize(blurred, width, height);
+  const magnitude = sobelMagnitude(normalized, width, height);
   const bw = thresholdAndInvert(magnitude, threshold);
   return toImageData(bw, width, height);
 }
