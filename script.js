@@ -6,10 +6,8 @@ const errorMessage = document.getElementById('error-message');
 const statusMessage = document.getElementById('status-message');
 const successMessage = document.getElementById('success-message');
 const coloringSheetSection = document.getElementById('coloring-sheet-section');
-const previewArea = document.getElementById('preview-area');
 const originalCanvas = document.getElementById('original-canvas');
 const outputCanvas = document.getElementById('output-canvas');
-const tuningControls = document.getElementById('tuning-controls');
 const detailSlider = document.getElementById('detail-slider');
 const detailValue = document.getElementById('detail-value');
 const sensitivitySlider = document.getElementById('sensitivity-slider');
@@ -20,7 +18,6 @@ const emailButton = document.getElementById('email-button');
 const resetButton = document.getElementById('reset-button');
 const dotsSection = document.getElementById('dots-section');
 const dotsCanvas = document.getElementById('dots-canvas');
-const dotsControls = document.getElementById('dots-controls');
 const outlineTightnessSlider = document.getElementById('outline-tightness-slider');
 const outlineTightnessValue = document.getElementById('outline-tightness-value');
 const dotCountSlider = document.getElementById('dot-count-slider');
@@ -580,10 +577,14 @@ function recomputeDots(tightness, dotCount) {
   const boundary = computeSilhouetteBoundary(imageData, tightness);
   if (!boundary) {
     cachedDotsBoundary = null;
+    dotsCanvas.hidden = true;
+    downloadDotsButton.hidden = true;
     showError("Couldn't find a clean outline for this photo — try adjusting Outline Tightness.");
     return;
   }
   cachedDotsBoundary = boundary;
+  dotsCanvas.hidden = false;
+  downloadDotsButton.hidden = false;
   renderDotsFromBoundary(dotCount);
 }
 
