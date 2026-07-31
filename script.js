@@ -98,6 +98,8 @@ async function handleFile(file) {
 
   currentFileName = file.name.replace(/\.[^/.]+$/, '');
 
+  clearTimeout(sensitivityDebounceTimer);
+
   previewArea.hidden = true;
   downloadButton.hidden = true;
   printButton.hidden = true;
