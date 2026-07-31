@@ -11,9 +11,24 @@ const downloadButton = document.getElementById('download-button');
 const printButton = document.getElementById('print-button');
 const emailButton = document.getElementById('email-button');
 const successMessage = document.getElementById('success-message');
+const tuningControls = document.getElementById('tuning-controls');
+const detailSlider = document.getElementById('detail-slider');
+const detailValue = document.getElementById('detail-value');
+const sensitivitySlider = document.getElementById('sensitivity-slider');
+const sensitivityValue = document.getElementById('sensitivity-value');
+const resetButton = document.getElementById('reset-button');
 
 let currentFileName = 'coloring-sheet';
 let processingToken = 0;
+
+const DEFAULT_THRESHOLD = 210;
+const DEFAULT_GAIN = 3;
+
+let cachedBlurred = null;
+let cachedWidth = 0;
+let cachedHeight = 0;
+let cachedMagnitude = null;
+let sensitivityDebounceTimer = null;
 
 function validateImageFile(file) {
   return !!file && ['image/png', 'image/jpeg', 'image/webp'].includes(file.type);
@@ -87,6 +102,7 @@ async function handleFile(file) {
   downloadButton.hidden = true;
   printButton.hidden = true;
   emailButton.hidden = true;
+  tuningControls.hidden = true;
   statusMessage.hidden = false;
 
   // Yield to the browser so "Processing…" paints before the heavy
@@ -101,15 +117,23 @@ async function handleFile(file) {
     const ctx = drawImageToCanvas(img, originalCanvas, MAX_DIMENSION);
     const imageData = ctx.getImageData(0, 0, originalCanvas.width, originalCanvas.height);
 
-    const outputData = processImageData(imageData);
-    outputCanvas.width = originalCanvas.width;
-    outputCanvas.height = originalCanvas.height;
-    outputCanvas.getContext('2d').putImageData(outputData, 0, 0);
+    cachedWidth = imageData.width;
+    cachedHeight = imageData.height;
+    const gray = toGrayscale(imageData);
+    cachedBlurred = boxBlur3x3(gray, cachedWidth, cachedHeight);
+
+    detailSlider.value = String(DEFAULT_THRESHOLD);
+    detailValue.textContent = String(DEFAULT_THRESHOLD);
+    sensitivitySlider.value = String(DEFAULT_GAIN);
+    sensitivityValue.textContent = String(DEFAULT_GAIN);
+
+    recomputeFromBlur(DEFAULT_GAIN, DEFAULT_THRESHOLD);
 
     previewArea.hidden = false;
     downloadButton.hidden = false;
     printButton.hidden = false;
     emailButton.hidden = false;
+    tuningControls.hidden = false;
   } catch (err) {
     if (token === processingToken) {
       showError('Something went wrong processing that image. Please try a different file.');
@@ -273,14 +297,18 @@ function toImageData(channel, width, height) {
   return imageData;
 }
 
-function processImageData(imageData, threshold = 210) {
-  const { width, height } = imageData;
-  const gray = toGrayscale(imageData);
-  const blurred = boxBlur3x3(gray, width, height);
-  const normalized = localContrastNormalize(blurred, width, height);
-  const magnitude = sobelMagnitude(normalized, width, height);
-  const bw = thresholdAndInvert(magnitude, threshold);
-  return toImageData(bw, width, height);
+function renderFromMagnitude(threshold) {
+  const bw = thresholdAndInvert(cachedMagnitude, threshold);
+  const rendered = toImageData(bw, cachedWidth, cachedHeight);
+  outputCanvas.width = cachedWidth;
+  outputCanvas.height = cachedHeight;
+  outputCanvas.getContext('2d').putImageData(rendered, 0, 0);
+}
+
+function recomputeFromBlur(gain, threshold) {
+  const normalized = localContrastNormalize(cachedBlurred, cachedWidth, cachedHeight, 7, 128, 64, gain);
+  cachedMagnitude = sobelMagnitude(normalized, cachedWidth, cachedHeight);
+  renderFromMagnitude(threshold);
 }
 
 downloadButton.addEventListener('click', () => {
@@ -309,4 +337,31 @@ emailButton.addEventListener('click', async () => {
   const subject = encodeURIComponent('Coloring Sheet Original Photo');
   const body = encodeURIComponent('Paste the photo below (Ctrl+V) before sending — it has been copied to your clipboard.');
   window.location.href = `mailto:varga.ferenc88@gmail.com?subject=${subject}&body=${body}`;
+});
+
+detailSlider.addEventListener('input', () => {
+  const threshold = Number(detailSlider.value);
+  detailValue.textContent = String(threshold);
+  if (!cachedMagnitude) return;
+  renderFromMagnitude(threshold);
+});
+
+sensitivitySlider.addEventListener('input', () => {
+  const gain = Number(sensitivitySlider.value);
+  sensitivityValue.textContent = String(gain);
+  if (!cachedBlurred) return;
+  clearTimeout(sensitivityDebounceTimer);
+  sensitivityDebounceTimer = setTimeout(() => {
+    recomputeFromBlur(gain, Number(detailSlider.value));
+  }, 75);
+});
+
+resetButton.addEventListener('click', () => {
+  if (!cachedBlurred) return;
+  clearTimeout(sensitivityDebounceTimer);
+  detailSlider.value = String(DEFAULT_THRESHOLD);
+  detailValue.textContent = String(DEFAULT_THRESHOLD);
+  sensitivitySlider.value = String(DEFAULT_GAIN);
+  sensitivityValue.textContent = String(DEFAULT_GAIN);
+  recomputeFromBlur(DEFAULT_GAIN, DEFAULT_THRESHOLD);
 });
