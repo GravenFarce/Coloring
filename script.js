@@ -23,6 +23,7 @@ const outlineTightnessValue = document.getElementById('outline-tightness-value')
 const dotCountSlider = document.getElementById('dot-count-slider');
 const dotCountValue = document.getElementById('dot-count-value');
 const downloadDotsButton = document.getElementById('download-dots-button');
+const printDotsButton = document.getElementById('print-dots-button');
 const resetDotsButton = document.getElementById('reset-dots-button');
 
 let currentFileName = 'coloring-sheet';
@@ -597,6 +598,15 @@ downloadButton.addEventListener('click', () => {
 
 printButton.addEventListener('click', () => {
   window.print();
+});
+
+printDotsButton.addEventListener('click', () => {
+  document.body.classList.add('printing-dots');
+  window.print();
+});
+
+window.addEventListener('afterprint', () => {
+  document.body.classList.remove('printing-dots');
 });
 
 emailButton.addEventListener('click', async () => {

@@ -197,6 +197,7 @@ h1::after {
 #email-button,
 #reset-button,
 #download-dots-button,
+#print-dots-button,
 #reset-dots-button {
   padding: 0.7rem 1.4rem;
   font-size: 1rem;
@@ -214,6 +215,7 @@ h1::after {
 #email-button:hover,
 #reset-button:hover,
 #download-dots-button:hover,
+#print-dots-button:hover,
 #reset-dots-button:hover {
   transform: scale(1.05);
   filter: brightness(1.08);
@@ -224,6 +226,7 @@ h1::after {
 #email-button:active,
 #reset-button:active,
 #download-dots-button:active,
+#print-dots-button:active,
 #reset-dots-button:active {
   transform: scale(0.97);
 }
@@ -247,6 +250,10 @@ h1::after {
 
 #download-dots-button {
   background: var(--crayon-green);
+}
+
+#print-dots-button {
+  background: var(--crayon-orange);
 }
 
 #dots-canvas {
@@ -289,6 +296,20 @@ h1::after {
     visibility: visible;
   }
   #output-canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+  }
+
+  body.printing-dots #output-canvas {
+    visibility: hidden;
+  }
+  body.printing-dots #dots-canvas,
+  body.printing-dots #dots-canvas * {
+    visibility: visible;
+  }
+  body.printing-dots #dots-canvas {
     position: absolute;
     top: 0;
     left: 0;
