@@ -46,6 +46,33 @@ h1::after {
   );
 }
 
+.section-heading {
+  font-size: 1.6rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  display: inline-block;
+  margin-top: 2rem;
+  margin-bottom: 0.5rem;
+}
+
+.section-heading::after {
+  content: "";
+  display: block;
+  height: 5px;
+  width: 100%;
+  margin-top: 0.3rem;
+  border-radius: 999px;
+  background: linear-gradient(
+    90deg,
+    var(--crayon-red),
+    var(--crayon-orange),
+    var(--crayon-yellow),
+    var(--crayon-green),
+    var(--crayon-blue),
+    var(--crayon-purple)
+  );
+}
+
 .subtitle {
   color: #555;
   font-size: 1.05rem;
@@ -158,12 +185,19 @@ h1::after {
   border: 1px solid #eee;
 }
 
+.button-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
 #download-button,
 #print-button,
 #email-button,
-#generate-dots-button,
-#download-dots-button {
-  margin-top: 1.5rem;
+#reset-button,
+#download-dots-button,
+#reset-dots-button {
   padding: 0.7rem 1.4rem;
   font-size: 1rem;
   font-weight: bold;
@@ -178,8 +212,9 @@ h1::after {
 #download-button:hover,
 #print-button:hover,
 #email-button:hover,
-#generate-dots-button:hover,
-#download-dots-button:hover {
+#reset-button:hover,
+#download-dots-button:hover,
+#reset-dots-button:hover {
   transform: scale(1.05);
   filter: brightness(1.08);
 }
@@ -187,23 +222,31 @@ h1::after {
 #download-button:active,
 #print-button:active,
 #email-button:active,
-#generate-dots-button:active,
-#download-dots-button:active {
+#reset-button:active,
+#download-dots-button:active,
+#reset-dots-button:active {
   transform: scale(0.97);
 }
 
 #download-button {
   background: var(--crayon-green);
-  margin-right: 0.75rem;
 }
 
 #print-button {
   background: var(--crayon-orange);
-  margin-right: 0.75rem;
 }
 
 #email-button {
   background: var(--crayon-blue);
+}
+
+#reset-button,
+#reset-dots-button {
+  background: var(--crayon-red);
+}
+
+#download-dots-button {
+  background: var(--crayon-green);
 }
 
 #dots-canvas {
@@ -211,15 +254,6 @@ h1::after {
   max-width: 100%;
   border: 1px solid #eee;
   border-radius: 10px;
-  margin-top: 1rem;
-}
-
-#generate-dots-button {
-  background: var(--crayon-purple);
-}
-
-#download-dots-button {
-  background: var(--crayon-green);
   margin-top: 1rem;
 }
 
@@ -244,29 +278,6 @@ h1::after {
 .tuning-controls input[type="range"] {
   width: 100%;
   accent-color: var(--crayon-purple);
-}
-
-#reset-button {
-  align-self: flex-start;
-  margin-top: 0.25rem;
-  padding: 0.5rem 1rem;
-  font-size: 0.9rem;
-  font-weight: bold;
-  color: #fff;
-  background: var(--crayon-red);
-  border: none;
-  border-radius: 999px;
-  cursor: pointer;
-  transition: transform 0.15s ease, filter 0.15s ease;
-}
-
-#reset-button:hover {
-  transform: scale(1.05);
-  filter: brightness(1.08);
-}
-
-#reset-button:active {
-  transform: scale(0.97);
 }
 
 @media print {

@@ -23,43 +23,54 @@
     <p id="status-message" class="status-message" hidden>Processing&hellip;</p>
     <p id="success-message" class="success-message" hidden></p>
 
-    <div id="preview-area" class="preview-area" hidden>
-      <div class="preview-panel">
-        <h2>Original</h2>
-        <canvas id="original-canvas"></canvas>
+    <section id="coloring-sheet-section" hidden>
+      <h2 class="section-heading">Coloring Sheet</h2>
+
+      <div id="preview-area" class="preview-area">
+        <div class="preview-panel">
+          <h2>Original</h2>
+          <canvas id="original-canvas"></canvas>
+        </div>
+        <div class="preview-panel">
+          <h2>Coloring Sheet</h2>
+          <canvas id="output-canvas"></canvas>
+        </div>
       </div>
-      <div class="preview-panel">
-        <h2>Coloring Sheet</h2>
-        <canvas id="output-canvas"></canvas>
+
+      <div id="tuning-controls" class="tuning-controls">
+        <label for="detail-slider">Detail Level: <span id="detail-value">210</span></label>
+        <input type="range" id="detail-slider" min="100" max="300" step="10" value="210">
+
+        <label for="sensitivity-slider">Dark-Area Sensitivity: <span id="sensitivity-value">3</span></label>
+        <input type="range" id="sensitivity-slider" min="1" max="6" step="0.5" value="3">
       </div>
-    </div>
 
-    <div id="tuning-controls" class="tuning-controls" hidden>
-      <label for="detail-slider">Detail Level: <span id="detail-value">210</span></label>
-      <input type="range" id="detail-slider" min="100" max="300" step="10" value="210">
+      <div class="button-row">
+        <button id="download-button">Download Coloring Sheet</button>
+        <button id="print-button">Print Coloring Sheet</button>
+        <button id="email-button">Email Original Photo</button>
+        <button id="reset-button">Reset to Defaults</button>
+      </div>
+    </section>
 
-      <label for="sensitivity-slider">Dark-Area Sensitivity: <span id="sensitivity-value">3</span></label>
-      <input type="range" id="sensitivity-slider" min="1" max="6" step="0.5" value="3">
+    <section id="dots-section" hidden>
+      <h2 class="section-heading">Connect the Dots</h2>
 
-      <button id="reset-button">Reset to Defaults</button>
-    </div>
+      <canvas id="dots-canvas"></canvas>
 
-    <div id="dots-controls" class="tuning-controls" hidden>
-      <label for="outline-tightness-slider">Outline Tightness: <span id="outline-tightness-value">100</span></label>
-      <input type="range" id="outline-tightness-slider" min="40" max="150" step="10" value="100">
+      <div id="dots-controls" class="tuning-controls">
+        <label for="outline-tightness-slider">Outline Tightness: <span id="outline-tightness-value">100</span></label>
+        <input type="range" id="outline-tightness-slider" min="40" max="150" step="10" value="100">
 
-      <label for="dot-count-slider">Number of Dots: <span id="dot-count-value">50</span></label>
-      <input type="range" id="dot-count-slider" min="20" max="100" step="5" value="50">
+        <label for="dot-count-slider">Number of Dots: <span id="dot-count-value">50</span></label>
+        <input type="range" id="dot-count-slider" min="20" max="100" step="5" value="50">
+      </div>
 
-      <button id="generate-dots-button">Generate Connect-the-Dots</button>
-    </div>
-
-    <canvas id="dots-canvas" hidden></canvas>
-    <button id="download-dots-button" hidden>Download Connect-the-Dots</button>
-
-    <button id="download-button" hidden>Download Coloring Sheet</button>
-    <button id="print-button" hidden>Print Coloring Sheet</button>
-    <button id="email-button" hidden>Email Original Photo</button>
+      <div class="button-row">
+        <button id="download-dots-button">Download Connect-the-Dots</button>
+        <button id="reset-dots-button">Reset to Defaults</button>
+      </div>
+    </section>
   </main>
 
   <script src="script.js"></script>

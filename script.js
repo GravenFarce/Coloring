@@ -4,27 +4,29 @@ const fileInput = document.getElementById('file-input');
 const dropZone = document.getElementById('drop-zone');
 const errorMessage = document.getElementById('error-message');
 const statusMessage = document.getElementById('status-message');
+const successMessage = document.getElementById('success-message');
+const coloringSheetSection = document.getElementById('coloring-sheet-section');
 const previewArea = document.getElementById('preview-area');
 const originalCanvas = document.getElementById('original-canvas');
 const outputCanvas = document.getElementById('output-canvas');
-const downloadButton = document.getElementById('download-button');
-const printButton = document.getElementById('print-button');
-const emailButton = document.getElementById('email-button');
-const successMessage = document.getElementById('success-message');
 const tuningControls = document.getElementById('tuning-controls');
 const detailSlider = document.getElementById('detail-slider');
 const detailValue = document.getElementById('detail-value');
 const sensitivitySlider = document.getElementById('sensitivity-slider');
 const sensitivityValue = document.getElementById('sensitivity-value');
+const downloadButton = document.getElementById('download-button');
+const printButton = document.getElementById('print-button');
+const emailButton = document.getElementById('email-button');
 const resetButton = document.getElementById('reset-button');
+const dotsSection = document.getElementById('dots-section');
+const dotsCanvas = document.getElementById('dots-canvas');
 const dotsControls = document.getElementById('dots-controls');
 const outlineTightnessSlider = document.getElementById('outline-tightness-slider');
 const outlineTightnessValue = document.getElementById('outline-tightness-value');
 const dotCountSlider = document.getElementById('dot-count-slider');
 const dotCountValue = document.getElementById('dot-count-value');
-const generateDotsButton = document.getElementById('generate-dots-button');
-const dotsCanvas = document.getElementById('dots-canvas');
 const downloadDotsButton = document.getElementById('download-dots-button');
+const resetDotsButton = document.getElementById('reset-dots-button');
 
 let currentFileName = 'coloring-sheet';
 let processingToken = 0;
@@ -38,7 +40,9 @@ let cachedBlurred = null;
 let cachedWidth = 0;
 let cachedHeight = 0;
 let cachedMagnitude = null;
+let cachedDotsBoundary = null;
 let sensitivityDebounceTimer = null;
+let tightnessDebounceTimer = null;
 
 function validateImageFile(file) {
   return !!file && ['image/png', 'image/jpeg', 'image/webp'].includes(file.type);
@@ -109,15 +113,10 @@ async function handleFile(file) {
   currentFileName = file.name.replace(/\.[^/.]+$/, '');
 
   clearTimeout(sensitivityDebounceTimer);
+  clearTimeout(tightnessDebounceTimer);
 
-  previewArea.hidden = true;
-  downloadButton.hidden = true;
-  printButton.hidden = true;
-  emailButton.hidden = true;
-  tuningControls.hidden = true;
-  dotsControls.hidden = true;
-  dotsCanvas.hidden = true;
-  downloadDotsButton.hidden = true;
+  coloringSheetSection.hidden = true;
+  dotsSection.hidden = true;
   statusMessage.hidden = false;
 
   // Yield to the browser so "Processing…" paints before the heavy
@@ -147,13 +146,10 @@ async function handleFile(file) {
     dotCountValue.textContent = String(DEFAULT_DOT_COUNT);
 
     recomputeFromBlur(DEFAULT_GAIN, DEFAULT_THRESHOLD);
+    recomputeDots(DEFAULT_TIGHTNESS, DEFAULT_DOT_COUNT);
 
-    previewArea.hidden = false;
-    downloadButton.hidden = false;
-    printButton.hidden = false;
-    emailButton.hidden = false;
-    tuningControls.hidden = false;
-    dotsControls.hidden = false;
+    coloringSheetSection.hidden = false;
+    dotsSection.hidden = false;
   } catch (err) {
     if (token === processingToken) {
       showError('Something went wrong processing that image. Please try a different file.');
@@ -520,7 +516,7 @@ function simplifyToApproxCount(points, targetCount, maxIterations = 25) {
   return best;
 }
 
-function generateDotPoints(imageData, tightness, targetDotCount) {
+function computeSilhouetteBoundary(imageData, tightness) {
   const { width, height } = imageData;
   const avgColor = sampleBorderColor(imageData, 5);
   const background = floodFillBackgroundByColor(imageData, avgColor, tightness);
@@ -537,7 +533,7 @@ function generateDotPoints(imageData, tightness, targetDotCount) {
   const boundary = traceBoundary(finalMask, width, height);
   if (boundary.length < 4) return null;
 
-  return simplifyToApproxCount(boundary, targetDotCount);
+  return boundary;
 }
 
 function renderFromMagnitude(threshold) {
@@ -552,6 +548,43 @@ function recomputeFromBlur(gain, threshold) {
   const normalized = localContrastNormalize(cachedBlurred, cachedWidth, cachedHeight, 7, 128, 64, gain);
   cachedMagnitude = sobelMagnitude(normalized, cachedWidth, cachedHeight);
   renderFromMagnitude(threshold);
+}
+
+function renderDotsToCanvas(points, canvas, width, height) {
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, width, height);
+  ctx.fillStyle = '#000000';
+  ctx.font = '14px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  points.forEach(([x, y], i) => {
+    ctx.beginPath();
+    ctx.arc(x, y, 3, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillText(String(i + 1), x, y - 10);
+  });
+}
+
+function renderDotsFromBoundary(dotCount) {
+  if (!cachedDotsBoundary) return;
+  const simplified = simplifyToApproxCount(cachedDotsBoundary, dotCount);
+  renderDotsToCanvas(simplified, dotsCanvas, cachedWidth, cachedHeight);
+}
+
+function recomputeDots(tightness, dotCount) {
+  const ctx = originalCanvas.getContext('2d');
+  const imageData = ctx.getImageData(0, 0, originalCanvas.width, originalCanvas.height);
+  const boundary = computeSilhouetteBoundary(imageData, tightness);
+  if (!boundary) {
+    cachedDotsBoundary = null;
+    showError("Couldn't find a clean outline for this photo — try adjusting Outline Tightness.");
+    return;
+  }
+  cachedDotsBoundary = boundary;
+  renderDotsFromBoundary(dotCount);
 }
 
 downloadButton.addEventListener('click', () => {
@@ -606,56 +639,34 @@ resetButton.addEventListener('click', () => {
   detailValue.textContent = String(DEFAULT_THRESHOLD);
   sensitivitySlider.value = String(DEFAULT_GAIN);
   sensitivityValue.textContent = String(DEFAULT_GAIN);
+  recomputeFromBlur(DEFAULT_GAIN, DEFAULT_THRESHOLD);
+});
+
+outlineTightnessSlider.addEventListener('input', () => {
+  const tightness = Number(outlineTightnessSlider.value);
+  outlineTightnessValue.textContent = String(tightness);
+  if (!cachedBlurred) return;
+  clearTimeout(tightnessDebounceTimer);
+  tightnessDebounceTimer = setTimeout(() => {
+    recomputeDots(tightness, Number(dotCountSlider.value));
+  }, 75);
+});
+
+dotCountSlider.addEventListener('input', () => {
+  const dotCount = Number(dotCountSlider.value);
+  dotCountValue.textContent = String(dotCount);
+  if (!cachedDotsBoundary) return;
+  renderDotsFromBoundary(dotCount);
+});
+
+resetDotsButton.addEventListener('click', () => {
+  if (!cachedBlurred) return;
+  clearTimeout(tightnessDebounceTimer);
   outlineTightnessSlider.value = String(DEFAULT_TIGHTNESS);
   outlineTightnessValue.textContent = String(DEFAULT_TIGHTNESS);
   dotCountSlider.value = String(DEFAULT_DOT_COUNT);
   dotCountValue.textContent = String(DEFAULT_DOT_COUNT);
-  recomputeFromBlur(DEFAULT_GAIN, DEFAULT_THRESHOLD);
-});
-
-function renderDotsToCanvas(points, canvas, width, height) {
-  canvas.width = width;
-  canvas.height = height;
-  const ctx = canvas.getContext('2d');
-  ctx.fillStyle = '#ffffff';
-  ctx.fillRect(0, 0, width, height);
-  ctx.fillStyle = '#000000';
-  ctx.font = '14px sans-serif';
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  points.forEach(([x, y], i) => {
-    ctx.beginPath();
-    ctx.arc(x, y, 3, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillText(String(i + 1), x, y - 10);
-  });
-}
-
-outlineTightnessSlider.addEventListener('input', () => {
-  outlineTightnessValue.textContent = outlineTightnessSlider.value;
-});
-
-dotCountSlider.addEventListener('input', () => {
-  dotCountValue.textContent = dotCountSlider.value;
-});
-
-generateDotsButton.addEventListener('click', () => {
-  clearError();
-  if (!cachedBlurred) return;
-  const tightness = Number(outlineTightnessSlider.value);
-  const dotCount = Number(dotCountSlider.value);
-  const ctx = originalCanvas.getContext('2d');
-  const imageData = ctx.getImageData(0, 0, originalCanvas.width, originalCanvas.height);
-  const points = generateDotPoints(imageData, tightness, dotCount);
-  if (!points) {
-    showError("Couldn't find a clean outline for this photo — try adjusting Outline Tightness.");
-    dotsCanvas.hidden = true;
-    downloadDotsButton.hidden = true;
-    return;
-  }
-  renderDotsToCanvas(points, dotsCanvas, originalCanvas.width, originalCanvas.height);
-  dotsCanvas.hidden = false;
-  downloadDotsButton.hidden = false;
+  recomputeDots(DEFAULT_TIGHTNESS, DEFAULT_DOT_COUNT);
 });
 
 downloadDotsButton.addEventListener('click', () => {
