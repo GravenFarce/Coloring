@@ -160,7 +160,9 @@ h1::after {
 
 #download-button,
 #print-button,
-#email-button {
+#email-button,
+#generate-dots-button,
+#download-dots-button {
   margin-top: 1.5rem;
   padding: 0.7rem 1.4rem;
   font-size: 1rem;
@@ -175,14 +177,18 @@ h1::after {
 
 #download-button:hover,
 #print-button:hover,
-#email-button:hover {
+#email-button:hover,
+#generate-dots-button:hover,
+#download-dots-button:hover {
   transform: scale(1.05);
   filter: brightness(1.08);
 }
 
 #download-button:active,
 #print-button:active,
-#email-button:active {
+#email-button:active,
+#generate-dots-button:active,
+#download-dots-button:active {
   transform: scale(0.97);
 }
 
@@ -198,6 +204,23 @@ h1::after {
 
 #email-button {
   background: var(--crayon-blue);
+}
+
+#dots-canvas {
+  display: block;
+  max-width: 100%;
+  border: 1px solid #eee;
+  border-radius: 10px;
+  margin-top: 1rem;
+}
+
+#generate-dots-button {
+  background: var(--crayon-purple);
+}
+
+#download-dots-button {
+  background: var(--crayon-green);
+  margin-top: 1rem;
 }
 
 .tuning-controls {

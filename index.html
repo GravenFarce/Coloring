@@ -44,6 +44,19 @@
       <button id="reset-button">Reset to Defaults</button>
     </div>
 
+    <div id="dots-controls" class="tuning-controls" hidden>
+      <label for="outline-tightness-slider">Outline Tightness: <span id="outline-tightness-value">100</span></label>
+      <input type="range" id="outline-tightness-slider" min="40" max="150" step="10" value="100">
+
+      <label for="dot-count-slider">Number of Dots: <span id="dot-count-value">50</span></label>
+      <input type="range" id="dot-count-slider" min="20" max="100" step="5" value="50">
+
+      <button id="generate-dots-button">Generate Connect-the-Dots</button>
+    </div>
+
+    <canvas id="dots-canvas" hidden></canvas>
+    <button id="download-dots-button" hidden>Download Connect-the-Dots</button>
+
     <button id="download-button" hidden>Download Coloring Sheet</button>
     <button id="print-button" hidden>Print Coloring Sheet</button>
     <button id="email-button" hidden>Email Original Photo</button>
