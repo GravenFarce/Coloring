@@ -34,6 +34,16 @@
       </div>
     </div>
 
+    <div id="tuning-controls" class="tuning-controls" hidden>
+      <label for="detail-slider">Detail Level: <span id="detail-value">210</span></label>
+      <input type="range" id="detail-slider" min="100" max="300" step="10" value="210">
+
+      <label for="sensitivity-slider">Dark-Area Sensitivity: <span id="sensitivity-value">3</span></label>
+      <input type="range" id="sensitivity-slider" min="1" max="6" step="0.5" value="3">
+
+      <button id="reset-button">Reset to Defaults</button>
+    </div>
+
     <button id="download-button" hidden>Download Coloring Sheet</button>
     <button id="print-button" hidden>Print Coloring Sheet</button>
     <button id="email-button" hidden>Email Original Photo</button>
