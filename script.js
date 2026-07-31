@@ -9,6 +9,8 @@ const originalCanvas = document.getElementById('original-canvas');
 const outputCanvas = document.getElementById('output-canvas');
 const downloadButton = document.getElementById('download-button');
 const printButton = document.getElementById('print-button');
+const emailButton = document.getElementById('email-button');
+const successMessage = document.getElementById('success-message');
 
 let currentFileName = 'coloring-sheet';
 let processingToken = 0;
@@ -59,8 +61,19 @@ function clearError() {
   errorMessage.textContent = '';
 }
 
+function showSuccess(msg) {
+  successMessage.textContent = msg;
+  successMessage.hidden = false;
+}
+
+function clearSuccess() {
+  successMessage.hidden = true;
+  successMessage.textContent = '';
+}
+
 async function handleFile(file) {
   clearError();
+  clearSuccess();
   if (!validateImageFile(file)) {
     showError('Please upload an image file (PNG, JPEG, or WebP).');
     return;
@@ -73,6 +86,7 @@ async function handleFile(file) {
   previewArea.hidden = true;
   downloadButton.hidden = true;
   printButton.hidden = true;
+  emailButton.hidden = true;
   statusMessage.hidden = false;
 
   // Yield to the browser so "Processing…" paints before the heavy
@@ -95,6 +109,7 @@ async function handleFile(file) {
     previewArea.hidden = false;
     downloadButton.hidden = false;
     printButton.hidden = false;
+    emailButton.hidden = false;
   } catch (err) {
     if (token === processingToken) {
       showError('Something went wrong processing that image. Please try a different file.');
@@ -277,4 +292,21 @@ downloadButton.addEventListener('click', () => {
 
 printButton.addEventListener('click', () => {
   window.print();
+});
+
+emailButton.addEventListener('click', async () => {
+  clearError();
+  clearSuccess();
+  try {
+    const blob = await new Promise((resolve) => originalCanvas.toBlob(resolve, 'image/png'));
+    if (!blob) throw new Error('Canvas could not be converted to an image.');
+    await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+    showSuccess('Photo copied to clipboard — paste it into the email (Ctrl+V)!');
+  } catch (err) {
+    showError('Could not copy the photo to your clipboard. You can still attach it manually.');
+    console.error(err);
+  }
+  const subject = encodeURIComponent('Coloring Sheet Original Photo');
+  const body = encodeURIComponent('Paste the photo below (Ctrl+V) before sending — it has been copied to your clipboard.');
+  window.location.href = `mailto:varga.ferenc88@gmail.com?subject=${subject}&body=${body}`;
 });

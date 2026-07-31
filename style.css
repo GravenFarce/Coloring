@@ -102,6 +102,16 @@ h1::after {
   border-radius: 999px;
 }
 
+.success-message {
+  display: inline-block;
+  color: #0f4d3a;
+  background: #d9f5ea;
+  border: 2px solid var(--crayon-green);
+  font-weight: bold;
+  padding: 0.5rem 1rem;
+  border-radius: 999px;
+}
+
 @keyframes fade-slide-in {
   from {
     opacity: 0;
@@ -149,7 +159,8 @@ h1::after {
 }
 
 #download-button,
-#print-button {
+#print-button,
+#email-button {
   margin-top: 1.5rem;
   padding: 0.7rem 1.4rem;
   font-size: 1rem;
@@ -163,13 +174,15 @@ h1::after {
 }
 
 #download-button:hover,
-#print-button:hover {
+#print-button:hover,
+#email-button:hover {
   transform: scale(1.05);
   filter: brightness(1.08);
 }
 
 #download-button:active,
-#print-button:active {
+#print-button:active,
+#email-button:active {
   transform: scale(0.97);
 }
 
@@ -180,6 +193,11 @@ h1::after {
 
 #print-button {
   background: var(--crayon-orange);
+  margin-right: 0.75rem;
+}
+
+#email-button {
+  background: var(--crayon-blue);
 }
 
 @media print {
