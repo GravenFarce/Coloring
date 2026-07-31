@@ -17,12 +17,22 @@ const detailValue = document.getElementById('detail-value');
 const sensitivitySlider = document.getElementById('sensitivity-slider');
 const sensitivityValue = document.getElementById('sensitivity-value');
 const resetButton = document.getElementById('reset-button');
+const dotsControls = document.getElementById('dots-controls');
+const outlineTightnessSlider = document.getElementById('outline-tightness-slider');
+const outlineTightnessValue = document.getElementById('outline-tightness-value');
+const dotCountSlider = document.getElementById('dot-count-slider');
+const dotCountValue = document.getElementById('dot-count-value');
+const generateDotsButton = document.getElementById('generate-dots-button');
+const dotsCanvas = document.getElementById('dots-canvas');
+const downloadDotsButton = document.getElementById('download-dots-button');
 
 let currentFileName = 'coloring-sheet';
 let processingToken = 0;
 
 const DEFAULT_THRESHOLD = 210;
 const DEFAULT_GAIN = 3;
+const DEFAULT_TIGHTNESS = 100;
+const DEFAULT_DOT_COUNT = 50;
 
 let cachedBlurred = null;
 let cachedWidth = 0;
@@ -105,6 +115,9 @@ async function handleFile(file) {
   printButton.hidden = true;
   emailButton.hidden = true;
   tuningControls.hidden = true;
+  dotsControls.hidden = true;
+  dotsCanvas.hidden = true;
+  downloadDotsButton.hidden = true;
   statusMessage.hidden = false;
 
   // Yield to the browser so "Processing…" paints before the heavy
@@ -128,6 +141,10 @@ async function handleFile(file) {
     detailValue.textContent = String(DEFAULT_THRESHOLD);
     sensitivitySlider.value = String(DEFAULT_GAIN);
     sensitivityValue.textContent = String(DEFAULT_GAIN);
+    outlineTightnessSlider.value = String(DEFAULT_TIGHTNESS);
+    outlineTightnessValue.textContent = String(DEFAULT_TIGHTNESS);
+    dotCountSlider.value = String(DEFAULT_DOT_COUNT);
+    dotCountValue.textContent = String(DEFAULT_DOT_COUNT);
 
     recomputeFromBlur(DEFAULT_GAIN, DEFAULT_THRESHOLD);
 
@@ -136,6 +153,7 @@ async function handleFile(file) {
     printButton.hidden = false;
     emailButton.hidden = false;
     tuningControls.hidden = false;
+    dotsControls.hidden = false;
   } catch (err) {
     if (token === processingToken) {
       showError('Something went wrong processing that image. Please try a different file.');
@@ -588,5 +606,61 @@ resetButton.addEventListener('click', () => {
   detailValue.textContent = String(DEFAULT_THRESHOLD);
   sensitivitySlider.value = String(DEFAULT_GAIN);
   sensitivityValue.textContent = String(DEFAULT_GAIN);
+  outlineTightnessSlider.value = String(DEFAULT_TIGHTNESS);
+  outlineTightnessValue.textContent = String(DEFAULT_TIGHTNESS);
+  dotCountSlider.value = String(DEFAULT_DOT_COUNT);
+  dotCountValue.textContent = String(DEFAULT_DOT_COUNT);
   recomputeFromBlur(DEFAULT_GAIN, DEFAULT_THRESHOLD);
+});
+
+function renderDotsToCanvas(points, canvas, width, height) {
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, width, height);
+  ctx.fillStyle = '#000000';
+  ctx.font = '14px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  points.forEach(([x, y], i) => {
+    ctx.beginPath();
+    ctx.arc(x, y, 3, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillText(String(i + 1), x, y - 10);
+  });
+}
+
+outlineTightnessSlider.addEventListener('input', () => {
+  outlineTightnessValue.textContent = outlineTightnessSlider.value;
+});
+
+dotCountSlider.addEventListener('input', () => {
+  dotCountValue.textContent = dotCountSlider.value;
+});
+
+generateDotsButton.addEventListener('click', () => {
+  clearError();
+  if (!cachedBlurred) return;
+  const tightness = Number(outlineTightnessSlider.value);
+  const dotCount = Number(dotCountSlider.value);
+  const ctx = originalCanvas.getContext('2d');
+  const imageData = ctx.getImageData(0, 0, originalCanvas.width, originalCanvas.height);
+  const points = generateDotPoints(imageData, tightness, dotCount);
+  if (!points) {
+    showError("Couldn't find a clean outline for this photo — try adjusting Outline Tightness.");
+    dotsCanvas.hidden = true;
+    downloadDotsButton.hidden = true;
+    return;
+  }
+  renderDotsToCanvas(points, dotsCanvas, originalCanvas.width, originalCanvas.height);
+  dotsCanvas.hidden = false;
+  downloadDotsButton.hidden = false;
+});
+
+downloadDotsButton.addEventListener('click', () => {
+  const link = document.createElement('a');
+  link.download = `${currentFileName}-connect-the-dots.png`;
+  link.href = dotsCanvas.toDataURL('image/png');
+  link.click();
 });
